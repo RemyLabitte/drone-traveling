@@ -38,4 +38,14 @@ public class TravelPlan {
     public void setCustomerId(String customerId) {
         CustomerId = customerId;
     }
+
+    @Override
+    public String toString() {
+        return "TravelPlan{" +
+                "droneId='" + droneId + '\'' +
+                ", storeId='" + storeId + '\'' +
+                ", productId='" + productId + '\'' +
+                ", CustomerId='" + CustomerId + '\'' +
+                '}';
+    }
 }

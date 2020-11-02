@@ -5,10 +5,13 @@ import model.OrderedProduct;
 import model.Product;
 import model.Store;
 import model.StoreStock;
+import model.TravelPlan;
+import service.UtilsService;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +33,8 @@ public class Main {
         customers = readCustomersFile();
         drones = readDronesFiles();
         products = readStoreStockFiles();
+
+        List<TravelPlan> travelPlans = new ArrayList<>();
 
         orders.forEach(order -> {
             order.getProducts().forEach(product -> {
@@ -53,7 +58,7 @@ public class Main {
                     droneId = null;
                     drones.forEach(drone -> {
                         drone.setDistanceToTravel((double) 0);
-                        drone.setDistanceToCustomer(distanceToCustomer(drone, customer));
+                        drone.setDistanceToCustomer(UtilsService.distanceToCustomer(drone, customer));
                         nearestStoreId = setDistanceToTravelByDrone(storesWithStockForProduct, drone, drone.getDistanceToCustomer());
                         if ((droneId == null || isTheFasterDrone(drone)) && (drone.getAutonomie() > drone.getDistanceToTravel())) {
                             droneId = drone.getDroneId();
@@ -75,37 +80,38 @@ public class Main {
                     droneLivreur.setAutonomie(droneLivreur.getAutonomie() - (droneLivreur.getDistanceToStore() + droneLivreur.getDistanceToCustomer()));
                     product.setOrderedQty(product.getOrderedQty() - 1);
 
-                    //Actualiser les données dans les listes
-                    drones = drones.stream().map(d -> {
-                        if (d.getDroneId().equals(droneLivreur.getDroneId())) {
-                            d = droneLivreur;
-                        }
-                        return d;
-                    }).collect(Collectors.toList());
+                    TravelPlan travelPlan = new TravelPlan();
+                    travelPlan.setCustomerId(customer.getCustomerId());
+                    travelPlan.setDroneId(droneLivreur.getDroneId());
+                    travelPlan.setProductId(product.getProductId());
+                    travelPlan.setStoreId(storeLivreur.getStoreId());
 
-                    products = products.stream().map(p -> {
-                        if (p.getProductId().equals(product.getProductId())) {
-                            p.getStoresStocks().stream().map(storeStock -> {
-                                if (storeStock.getStoreId().equals(storeStockLivreur.getStoreId())) {
-                                    storeStock.setQuantity(storeStockLivreur.getQuantity());
-                                }
-                                return storeStock;
-                            });
-                        }
-                        return p;
-                    }).collect(Collectors.toList());
-
-                    order.setProducts(order.getProducts().stream().map(p -> {
-                        if (p.getProductId().equals(product.getProductId())) {
-                            p.setOrderedQty(product.getOrderedQty());
-                        }
-                        return p;
-                    }).collect(Collectors.toList()));
-                    System.out.println(product);
+                    travelPlans.add(travelPlan);
                 }
             });
-            System.out.println(order);
         });
+
+        FileWriter csvWriter = new FileWriter("resources/TravelPlan.csv");
+        csvWriter.append("DroneId");
+        csvWriter.append(COMMA_DELIMITER);
+        csvWriter.append("StoreId");
+        csvWriter.append(COMMA_DELIMITER);
+        csvWriter.append("ProductId");
+        csvWriter.append(COMMA_DELIMITER);
+        csvWriter.append("CustomerId");
+        csvWriter.append(COMMA_DELIMITER);
+        csvWriter.append("\n");
+
+        for (TravelPlan travelPlan : travelPlans) {
+            csvWriter.append(travelPlan.getDroneId()).append(COMMA_DELIMITER);
+            csvWriter.append(travelPlan.getStoreId()).append(COMMA_DELIMITER);
+            csvWriter.append(travelPlan.getProductId()).append(COMMA_DELIMITER);
+            csvWriter.append(travelPlan.getCustomerId()).append(COMMA_DELIMITER);
+            csvWriter.append("\n");
+        }
+
+        csvWriter.flush();
+        csvWriter.close();
     }
 
     private static boolean isTheFasterDrone(Drone drone) {
@@ -124,7 +130,7 @@ public class Main {
         final String[] nearestStoreId = {null};
         storeStockDispo.forEach(storeStock -> {
             Store s = stores.stream().filter(store -> store.getStoreId().equals(storeStock.getStoreId())).collect(Collectors.toList()).get(0);
-            Double distanceToStore = distanceToStore(drone, s);
+            Double distanceToStore = UtilsService.distanceToStore(drone, s);
 
             if (drone.getDistanceToTravel() != 0) {
                 if (drone.getDistanceToTravel() > (distanceToStore + (distanceToCustomer + distanceToStore))) {
@@ -139,18 +145,6 @@ public class Main {
             }
         });
         return nearestStoreId[0];
-    }
-
-    private static double distanceToStore(Drone drone, Store store) {
-        int x = Math.abs(drone.getX() - store.getX());
-        int y = Math.abs(drone.getY() - store.getY());
-        return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-    }
-
-    private static double distanceToCustomer(Drone drone, Customer customer) {
-        int x = Math.abs(drone.getX() - customer.getX());
-        int y = Math.abs(drone.getY() - customer.getY());
-        return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
     }
 
     private static List<Product> readStoreStockFiles() throws IOException {

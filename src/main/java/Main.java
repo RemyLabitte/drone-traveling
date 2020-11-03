@@ -52,33 +52,16 @@ public class Main {
                     Customer customer = customers.stream().filter(c -> c.getCustomerId().equals(order.getCustomerId())).collect(Collectors.toList()).get(0);
 
                     //Calculer la distance la plus courte drone / magasins / client pour définir quel drone livre depuis quel magasin
-                    // droneId = id du drone qui va effectuer la livraison
-                    // nearestStoreId = id du magasin dans lequel on va chercher le produit
-                    resetDistanceToTravelOfDrones();
-                    droneId = null;
-                    drones.forEach(drone -> {
-                        drone.setDistanceToTravel((double) 0);
-                        drone.setDistanceToCustomer(UtilsService.distanceToCustomer(drone, customer));
-                        nearestStoreId = setDistanceToTravelByDrone(storesWithStockForProduct, drone, drone.getDistanceToCustomer());
-                        if ((droneId == null || isTheFasterDrone(drone)) && (drone.getAutonomie() > drone.getDistanceToTravel())) {
-                            droneId = drone.getDroneId();
-                        }
-                    });
+                    calculateShortDistanceToTravel(storesWithStockForProduct, customer);
 
                     //Aller chercher le produit dans le magasin et actualiser la position du drone
                     Drone droneLivreur = drones.stream().filter(d -> d.getDroneId().equals(droneId)).findFirst().get();
                     Store storeLivreur = stores.stream().filter(s -> s.getStoreId().equals(nearestStoreId)).findFirst().get();
                     StoreStock storeStockLivreur = storesWithStockForProduct.stream().filter(storeStock -> storeStock.getStoreId().equals(nearestStoreId)).findFirst().get();
-                    droneLivreur.setX(storeLivreur.getX());
-                    droneLivreur.setY(storeLivreur.getY());
-                    droneLivreur.setAutonomie(droneLivreur.getAutonomie() - droneLivreur.getDistanceToStore());
-                    storeStockLivreur.setQuantity(storeStockLivreur.getQuantity() - 1);
+                    getProductFromStoreAndUpdateDronePosition(storeLivreur, droneLivreur, storeStockLivreur);
 
                     //Livrer le colis au client et actuliser la positon du drone
-                    droneLivreur.setX(customer.getX());
-                    droneLivreur.setY(customer.getY());
-                    droneLivreur.setAutonomie(droneLivreur.getAutonomie() - (droneLivreur.getDistanceToStore() + droneLivreur.getDistanceToCustomer()));
-                    product.setOrderedQty(product.getOrderedQty() - 1);
+                    deliverOrderToCustomerAndUpdateDronePosition(droneLivreur, customer, product);
 
                     TravelPlan travelPlan = new TravelPlan();
                     travelPlan.setCustomerId(customer.getCustomerId());
@@ -91,6 +74,10 @@ public class Main {
             });
         });
 
+        writeCsvTravelPlan(travelPlans);
+    }
+
+    private static void writeCsvTravelPlan(List<TravelPlan> travelPlans) throws IOException {
         FileWriter csvWriter = new FileWriter("resources/TravelPlan.csv");
         csvWriter.append("DroneId");
         csvWriter.append(COMMA_DELIMITER);
@@ -112,6 +99,34 @@ public class Main {
 
         csvWriter.flush();
         csvWriter.close();
+    }
+
+    private static void deliverOrderToCustomerAndUpdateDronePosition(Drone droneLivreur, Customer customer, OrderedProduct product) {
+        droneLivreur.setX(customer.getX());
+        droneLivreur.setY(customer.getY());
+        droneLivreur.setAutonomie(droneLivreur.getAutonomie() - (droneLivreur.getDistanceToStore() + droneLivreur.getDistanceToCustomer()));
+        product.setOrderedQty(product.getOrderedQty() - 1);
+    }
+
+    private static void getProductFromStoreAndUpdateDronePosition(Store storeLivreur, Drone droneLivreur,
+                                                                  StoreStock storeStockLivreur) {
+        droneLivreur.setX(storeLivreur.getX());
+        droneLivreur.setY(storeLivreur.getY());
+        droneLivreur.setAutonomie(droneLivreur.getAutonomie() - droneLivreur.getDistanceToStore());
+        storeStockLivreur.setQuantity(storeStockLivreur.getQuantity() - 1);
+    }
+
+    private static void calculateShortDistanceToTravel(List<StoreStock> storesWithStockForProduct, Customer customer) {
+        resetDistanceToTravelOfDrones();
+        droneId = null;
+        drones.forEach(drone -> {
+            drone.setDistanceToTravel((double) 0);
+            drone.setDistanceToCustomer(UtilsService.distanceToCustomer(drone, customer));
+            nearestStoreId = setDistanceToTravelByDrone(storesWithStockForProduct, drone, drone.getDistanceToCustomer());
+            if ((droneId == null || isTheFasterDrone(drone)) && (drone.getAutonomie() > drone.getDistanceToTravel())) {
+                droneId = drone.getDroneId();
+            }
+        });
     }
 
     private static boolean isTheFasterDrone(Drone drone) {

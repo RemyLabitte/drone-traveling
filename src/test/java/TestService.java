@@ -1,12 +1,10 @@
-package test;
-
 import model.Customer;
 import model.Drone;
 import model.Store;
-import service.UtilsService;
 import org.junit.jupiter.api.Test;
+import service.UtilsService;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestService {
 

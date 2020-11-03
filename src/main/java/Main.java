@@ -63,11 +63,8 @@ public class Main {
                     //Livrer le colis au client et actuliser la positon du drone
                     deliverOrderToCustomerAndUpdateDronePosition(droneLivreur, customer, product);
 
-                    TravelPlan travelPlan = new TravelPlan();
-                    travelPlan.setCustomerId(customer.getCustomerId());
-                    travelPlan.setDroneId(droneLivreur.getDroneId());
-                    travelPlan.setProductId(product.getProductId());
-                    travelPlan.setStoreId(storeLivreur.getStoreId());
+                    TravelPlan travelPlan = new TravelPlan(customer.getCustomerId(), droneLivreur.getDroneId(),
+                            product.getProductId(), storeLivreur.getStoreId());
 
                     travelPlans.add(travelPlan);
                 }

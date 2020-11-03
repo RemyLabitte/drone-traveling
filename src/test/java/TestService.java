@@ -4,6 +4,7 @@ import model.Store;
 import org.junit.jupiter.api.Test;
 import service.UtilsService;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestService {
@@ -15,7 +16,7 @@ public class TestService {
 
         Double result = UtilsService.distanceToStore(droneTest, storeTest);
 
-        assertNotNull(result);
+        assertEquals(1.4142135623730951, result);
     }
 
     @Test
@@ -25,6 +26,6 @@ public class TestService {
 
         Double result = UtilsService.distanceToCustomer(droneTest, customerTest);
 
-        assertNotNull(result);
+        assertEquals(1.4142135623730951, result);
     }
 }

@@ -5,7 +5,14 @@ public class TravelPlan {
     private String droneId;
     private String storeId;
     private String productId;
-    private String CustomerId;
+    private String customerId;
+
+    public TravelPlan(String droneId, String storeId, String productId, String customerId) {
+        this.droneId = droneId;
+        this.storeId = storeId;
+        this.productId = productId;
+        this.customerId = customerId;
+    }
 
     public String getDroneId() {
         return droneId;
@@ -32,11 +39,11 @@ public class TravelPlan {
     }
 
     public String getCustomerId() {
-        return CustomerId;
+        return customerId;
     }
 
     public void setCustomerId(String customerId) {
-        CustomerId = customerId;
+        this.customerId = customerId;
     }
 
     @Override
@@ -45,7 +52,7 @@ public class TravelPlan {
                 "droneId='" + droneId + '\'' +
                 ", storeId='" + storeId + '\'' +
                 ", productId='" + productId + '\'' +
-                ", CustomerId='" + CustomerId + '\'' +
+                ", CustomerId='" + customerId + '\'' +
                 '}';
     }
 }
